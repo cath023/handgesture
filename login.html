@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Page</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        background-image: url('background.jpg'); /* Add background image */
+        background-size: cover;
+        background-position: center;
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        width: 100%;
+        max-width: 400px;
+        margin: 50px auto;
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+    .container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    form {
+        margin-bottom: 20px;
+    }
+    label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+    }
+    input[type="text"], input[type="password"], input[type="email"], select {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    input[type="submit"] {
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 0;
+        margin-top: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    input[type="submit"]:hover {
+        background-color: #45a049;
+    }
+    .error {
+        color: red;
+        margin-top: 5px;
+    }
+    /* Style for modal */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    }
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%; /* Could be more or less, depending on screen size */
+    }
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Sign Up</h2>
+    <form id="signupForm" onsubmit="return validateSignupForm()">
+        <label for="Email">email:</label>
+        <input type="email" id="companyEmail" name="companyEmail" required>
+        <label for="firstName">First name:</label>
+        <input type="text" id="firstName" name="firstName" required>
+name:</label>
+        <input type="password" id="password" name="password" required>
+        <label for="lastName">Last name:</label>
+        <input type="text" id="lastName" name="lastName" required>
+        <label for="country">Country:</label>
+        <select id="country" name="country">
+            <option value="India">India</option>
+             <option value="United States">United States</option>
+<option value="United Kingdom">United Kingdom</option>
+<option value="Canada">Canada</option>
+<option value="Australia">Australia</option>
+<option value="Germany">Germany</option>
+<option value="France">France</option>
+<option value="Italy">Italy</option>
+<option value="Spain">Spain</option>
+<option value="Japan">Japan</option>
+<option value="China">China</option>
+<!-- Add more options for other countries if needed -->
+
+            <!-- Add more options for other countries if needed -->
+        </select>
+        <label for="companyWebsite">Company website (optional):</label>
+        <input type="url" id="companyWebsite" name="companyWebsite">
+        <input type="submit" value="Sign Up">
+    </form>
+    <p>Already have an account? <a href="#" onclick="openLoginModal()">Log in</a></p>
+</div>
+
+<!-- The Login Modal -->
+<div id="loginModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <span class="close" onclick="closeLoginModal()">&times;</span>
+        <h2>Login</h2>
+        <form id="loginForm" onsubmit="return validateLoginForm()">
+            <label for="loginUsername">Username:</label>
+            <input type="text" id="loginUsername" name="loginUsername" required>
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" name="loginPassword" required>
+            <input type="submit" value="Log in">
+        </form>
+    </div>
+</div>
+
+<script>
+    // Open the login modal
+    function openLoginModal() {
+        document.getElementById('loginModal').style.display = 'block';
+    }
+
+    // Close the login modal
+    function closeLoginModal() {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    function validateSignupForm() {
+        // Add your validation logic for the sign-up form here
+        redirectToIndex(); // Redirect to index.html
+        return false; // Prevent form submission (optional)
+    }
+
+    function validateLoginForm() {
+        // Add your validation logic for the login form here
+        redirectToIndex(); // Redirect to index.html
+        return false; // Prevent form submission (optional)
+    }
+
+    // Redirect to index.html
+    function redirectToIndex() {
+        window.location.href = 'index.html';
+    }
+</script>
+</body>
+</html>

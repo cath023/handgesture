@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Calling with Speech Recognition</title>
+  <style>
+    /* CSS styles */
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .video-container {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 10px;
+    }
+
+    .video-container video {
+      width: 100%; /* Adjusted width to ensure full visibility */
+      height: auto; /* Adjusted height to maintain aspect ratio */
+      object-fit: cover;
+    }
+
+    input[type="text"],
+    button {
+      margin: 5px;
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    input[type="text"] {
+      width: 300px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #transcript {
+      margin-top: 20px;
+    }
+
+    canvas {
+      margin-top: 20px;
+      display: block;
+      border: 1px solid black;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div class="video-container">
+      <video id="localVideo" width="320" height="240" autoplay></video>
+    </div>
+    <input type="text" id="roomNumber" placeholder="Enter Room Number">
+    <button id="createRoom">Create Room</button>
+    <button id="joinRoom">Join Room</button>
+    <button id="hangupCall">Hangup Call</button>
+    <div id="transcript"></div>
+    <canvas id="gestureCanvas" width="320" height="240"></canvas>
+  </div>
+
+  <!-- Include the PeerJS library -->
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose"></script>
+  <script>
+    window.addEventListener('load', async () => {
+      const localVideo = document.getElementById('localVideo');
+      const gestureCanvas = document.getElementById('gestureCanvas');
+      const gestureCtx = gestureCanvas.getContext('2d');
+
+      let peer;
+      let activeCall;
+      let localStream;
+
+      async function initPeer() {
+        // Initialize PeerJS with your server configuration
+        peer = new Peer(undefined, {
+          host: 'localhost', // Replace with your actual server host
+          port: 9000, // Replace with your actual server port
+          path: '/myapp' // Optional path
+        });
+
+        peer.on('open', id => {
+          console.log('My peer ID is: ' + id);
+        });
+
+        peer.on('call', incomingCall => {
+          handleCall(incomingCall);
+        });
+
+        peer.on('error', error => {
+          console.error('PeerJS error:', error);
+        });
+
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          localVideo.srcObject = localStream;
+          startRecognition();
+          await startGestureRecognition(); // Wait for gesture recognition to start
+        } catch (error) {
+          console.error('Error accessing media devices:', error);
+        }
+      }
+
+      function handleCall(incomingCall) {
+        if (!localStream) {
+          console.error('Local stream not available.');
+          return;
+        }
+
+        activeCall = incomingCall;
+        activeCall.answer(localStream);
+        activeCall.on('stream', remoteStream => {
+          remoteVideo.srcObject = remoteStream;
+        });
+      }
+
+      const createRoomButton = document.getElementById('createRoom');
+      const joinRoomButton = document.getElementById('joinRoom');
+      const hangupCallButton = document.getElementById('hangupCall');
+      const transcriptDiv = document.getElementById('transcript');
+
+      createRoomButton.addEventListener('click', () => {
+        const roomNumber = peer.id;
+        console.log('Room created:', roomNumber);
+        alert('Room created: ' + roomNumber);
+      });
+
+      joinRoomButton.addEventListener('click', () => {
+        const roomNumber = document.getElementById('roomNumber').value;
+        if (!roomNumber) {
+          console.error('Room number is required.');
+          return;
+        }
+
+        peer = new Peer();
+        peer.on('open', id => {
+          console.log('Connected to room:', roomNumber);
+          const call = peer.call(roomNumber, localStream);
+          call.on('stream', remoteStream => {
+            remoteVideo.srcObject = remoteStream;
+          });
+          activeCall = call;
+        });
+
+        initPeer();
+      });
+
+      hangupCallButton.addEventListener('click', () => {
+        if (activeCall) {
+          activeCall.close();
+          activeCall = null;
+        }
+      });
+
+      async function startRecognition() {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = event => {
+          const speechResult = event.results[0][0].transcript;
+          transcriptDiv.textContent = speechResult;
+        };
+
+        recognition.onend = () => {
+          // Restart recognition after speech ends
+          startRecognition();
+        };
+
+        recognition.onerror = error => {
+          console.error('Error occurred in recognition:', error);
+        };
+
+        recognition.start();
+      }
+
+      async function startGestureRecognition() {
+        try {
+          const handpose = await window.handpose.load();
+          console.log('Handpose model loaded.');
+
+          const detectHands = async () => {
+            const predictions = await handpose.estimateHands(localVideo);
+            console.log(predictions); // Log predictions to inspect their structure
+            if (predictions.length > 0) {
+              drawHand(predictions);
+            }
+            requestAnimationFrame(detectHands);
+          };
+
+          const drawHand = (predictions) => {
+            gestureCtx.clearRect(0, 0, gestureCanvas.width, gestureCanvas.height);
+
+            predictions.forEach(prediction => {
+              const landmarks = prediction.landmarks;
+              for (let i = 0; i < landmarks.length; i++) {
+                const x = landmarks[i][0];
+                const y = landmarks[i][1];
+                gestureCtx.beginPath();
+                gestureCtx.arc(x, y, 5, 0, 2 * Math.PI);
+                gestureCtx.fillStyle = 'red';
+                gestureCtx.fill();
+              }
+            });
+          };
+
+          detectHands();
+        } catch (error) {
+          console.error('Error loading handpose:', error);
+        }
+      }
+
+      initPeer();
+    });
+  </script>
+</body>
+</html>
